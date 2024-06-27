@@ -28,7 +28,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DatePickerWithRange } from '@/app/users/DateRangePicker';
-
+import DataDownload from "../app/users/datadownload";
 // Define your data type
 interface UserData {
   name: string;
@@ -147,7 +147,7 @@ export function DataTable<TData, TValue>({
         </div>
         <div className=' ml-4'><DatePickerWithRange date={date} setDate={setDate} /></div>
         
-
+        <div className=' ml-4'> <DataDownload data={data} /></div>
         {/* Column visibility */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -172,6 +172,7 @@ export function DataTable<TData, TValue>({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
       </div>
       {/* Table */}
       <div className='rounded-md border'>

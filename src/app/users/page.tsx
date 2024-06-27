@@ -6,7 +6,6 @@ import StatusDropdown from "./status";
 import { DatePickerWithRange } from "./DateRangePicker";
 import { DateRange } from "react-day-picker";
 import { Button } from "@/components/ui/button";
-
 interface DataItem {
   [key: string]: any;
 }
@@ -70,7 +69,7 @@ const DisplayDetails: React.FC = () => {
           </Button>
         </div>
       
-
+       
       <DataTable columns={columns} data={filteredData} />
     </div>
   );
