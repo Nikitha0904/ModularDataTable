@@ -19,6 +19,9 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
+    "json2csv": "^6.0.0-alpha.2",
+    "jspdf": "^2.5.1",
+    "jspdf-autotable": "^3.8.2",
     "lucide-react": "^0.396.0",
     "mysql2": "^3.10.1",
     "next": "14.2.4",
@@ -29,6 +32,7 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
+    "@types/json2csv": "^5.0.7",
     "@types/next": "^9.0.0",
     "@types/node": "^20",
     "@types/react": "^18",

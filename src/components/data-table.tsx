@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   ColumnDef,
   flexRender,
@@ -27,14 +27,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { DatePickerWithRange } from '@/app/users/DateRangePicker';
+import { DatePickerWithRange, DateRange } from '@/app/users/DateRangePicker';
+import DataDownload, { User } from '@/app/users/datadownload';
 
 // Define your data type
-interface UserData {
-  name: string;
-  email: string;
-  status: string;
-}
+interface UserData extends User {}
 
 // Define your columns
 const columns: ColumnDef<UserData, any>[] = [
@@ -53,9 +50,14 @@ const columns: ColumnDef<UserData, any>[] = [
     header: () => <div className='flex items-center'>Status</div>,
     cell: info => info.getValue(),
   },
+  {
+    accessorKey: 'datecreated',
+    header: () => <div className='flex items-center'>Date Created</div>,
+    cell: info => info.getValue(),
+  },
 ];
 
-interface DataTableProps<TData, TValue> {
+interface DataTableProps<TData extends User, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
 }
@@ -73,8 +75,7 @@ const globalFilterFn: FilterFn<UserData> = (row, columnId, filterValue) => {
   return true; // Return true to show all rows when filter is empty or 'all'
 };
 
-
-export function DataTable<TData, TValue>({
+export function DataTable<TData extends User, TValue>({
   columns,
   data
 }: DataTableProps<TData, TValue>) {
@@ -84,14 +85,26 @@ export function DataTable<TData, TValue>({
   const [selectedStatus, setSelectedStatus] = useState<string>('');
   const [date, setDate] = useState<DateRange | undefined>();
 
+  const filteredData = useMemo(() => {
+    if (!date) return data;
+    return data.filter((item: UserData) => {
+      const itemDate = new Date(item.datecreated);
+      const fromDate = date.from ? new Date(date.from) : null;
+      const toDate = date.to ? new Date(date.to) : null;
+      if (fromDate && toDate) {
+        return itemDate >= fromDate && itemDate <= toDate;
+      }
+      return true;
+    });
+  }, [data, date]);
+
   const table = useReactTable({
-    data,
+    data: filteredData,
     columns,
     state: {
       sorting,
       globalFilter,
       columnVisibility,
-      
     },
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
@@ -125,56 +138,60 @@ export function DataTable<TData, TValue>({
             className='max-w-sm'
           />
         </div>
-<div className='flex items-center  justify-end'>
-        <div className='mr-0'>
-          {/* Status dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant='outline' className='ml-auto'>
-              Status
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align='end'>
-            {['All','Active', 'Pending', 'Inactive'].map(status => (
-              <DropdownMenuCheckboxItem
-                key={status}
-                className='capitalize'
-                checked={selectedStatus === status.toLowerCase()}
-                onCheckedChange={value => handleStatusChange(value ? status.toLowerCase() : '')}
-              >
-                {status}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-        </div>
-        <div className=' ml-4'><DatePickerWithRange date={date} setDate={setDate} /></div>
-        
 
-        {/* Column visibility */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant='outline' className='ml-2'>
-              Columns
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align='end'>
-            {table
-              .getAllColumns()
-              .filter(column => column.getCanHide())
-              .map(column => (
-                <DropdownMenuCheckboxItem
-                  key={column.id}
-                  className='capitalize'
-                  checked={column.getIsVisible()}
-                  onCheckedChange={value => column.toggleVisibility(!!value)}
-                >
-                  {column.id}
-                </DropdownMenuCheckboxItem>
-              ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+        <div className='flex items-center justify-end'>
+          <div className='mr-0'>
+            {/* Status dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant='outline' className='ml-auto'>
+                  Status
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align='end'>
+                {['All', 'Active', 'Pending', 'Inactive'].map(status => (
+                  <DropdownMenuCheckboxItem
+                    key={status}
+                    className='capitalize'
+                    checked={selectedStatus === status.toLowerCase()}
+                    onCheckedChange={value => handleStatusChange(value ? status.toLowerCase() : '')}
+                  >
+                    {status}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          <div className='ml-4'>
+            <DatePickerWithRange date={date} setDate={setDate} />
+          </div>
+          <div className='ml-4'>
+            <DataDownload data={filteredData as User[]} />
+          </div>
+          {/* Column visibility */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant='outline' className='ml-2'>
+                Columns
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='end'>
+              {table
+                .getAllColumns()
+                .filter(column => column.getCanHide())
+                .map(column => (
+                  <DropdownMenuCheckboxItem
+                    key={column.id}
+                    className='capitalize'
+                    checked={column.getIsVisible()}
+                    onCheckedChange={value => column.toggleVisibility(!!value)}
+                  >
+                    {column.id}
+                  </DropdownMenuCheckboxItem>
+                ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
       {/* Table */}
       <div className='rounded-md border'>
@@ -193,7 +210,7 @@ export function DataTable<TData, TValue>({
                         header.column.columnDef.header,
                         header.getContext()
                       )}
-                      {(header.column.id === 'name' || header.column.id === 'email' || header.column.id === 'lastSeen' || header.column.id === 'status') && getSortingIcon(header.column.id)}
+                      {header.column.getCanSort() && getSortingIcon(header.column.id)}
                     </div>
                   </TableHead>
                 ))}
@@ -230,7 +247,6 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-
       {/* Pagination */}
       <div className='flex items-center justify-end space-x-2 py-4'>
         <Button
