@@ -61,15 +61,18 @@ interface DataTableProps<TData, TValue> {
 }
 
 const globalFilterFn: FilterFn<UserData> = (row, columnId, filterValue) => {
-  if (columnId === 'status' && filterValue) {
-    return row.getValue('status') === filterValue;
+  if (filterValue && filterValue.toLowerCase() !== 'all') {
+    if (columnId === 'status') {
+      return row.getValue('status') === filterValue.toLowerCase();
+    }
+    return (
+      (row.getValue('name') as string).toLowerCase().includes(filterValue.toLowerCase()) ||
+      (row.getValue('email') as string).toLowerCase().includes(filterValue.toLowerCase())
+    );
   }
-
-  return (
-    (row.getValue('name') as string).toLowerCase().includes(filterValue.toLowerCase()) ||
-    (row.getValue('email') as string).toLowerCase().includes(filterValue.toLowerCase()) 
-  );
+  return true; // Return true to show all rows when filter is empty or 'all'
 };
+
 
 export function DataTable<TData, TValue>({
   columns,
@@ -88,6 +91,7 @@ export function DataTable<TData, TValue>({
       sorting,
       globalFilter,
       columnVisibility,
+      
     },
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
@@ -101,7 +105,7 @@ export function DataTable<TData, TValue>({
 
   const handleStatusChange = (status: string) => {
     setSelectedStatus(status);
-    setGlobalFilter(status);
+    setGlobalFilter('');
     table.setGlobalFilter(status); // Setting status as the global filter value
   };
 
@@ -116,8 +120,7 @@ export function DataTable<TData, TValue>({
       <div className='flex items-center justify-between mb-4'>
         <div className='flex items-center'>
           <Input
-            placeholder='Search by name or  email'
-            value={globalFilter}
+            placeholder='Search by name or email'
             onChange={event => setGlobalFilter(event.target.value)}
             className='max-w-sm'
           />
@@ -132,7 +135,7 @@ export function DataTable<TData, TValue>({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align='end'>
-            {['Active', 'Pending', 'Inactive'].map(status => (
+            {['All','Active', 'Pending', 'Inactive'].map(status => (
               <DropdownMenuCheckboxItem
                 key={status}
                 className='capitalize'
