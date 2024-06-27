@@ -27,8 +27,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { DatePickerWithRange } from '@/app/users/DateRangePicker';
-import DataDownload from "../app/users/datadownload";
+import { DatePickerWithRange, DateRange } from '@/app/users/DateRangePicker'; // Make sure DateRange is imported correctly
+import DataDownload from '../app/users/datadownload'; // Ensure the correct path
+
 // Define your data type
 interface UserData {
   name: string;
@@ -40,17 +41,38 @@ interface UserData {
 const columns: ColumnDef<UserData, any>[] = [
   {
     accessorKey: 'name',
-    header: () => <div className='flex items-center'>Name</div>,
+    header: ({ column }) => (
+      <div
+        className='flex items-center cursor-pointer'
+        onClick={column.getToggleSortingHandler()}
+      >
+        Name {getSortingIcon(column)}
+      </div>
+    ),
     cell: info => info.getValue(),
   },
   {
     accessorKey: 'email',
-    header: () => <div className='flex items-center'>Email</div>,
+    header: ({ column }) => (
+      <div
+        className='flex items-center cursor-pointer'
+        onClick={column.getToggleSortingHandler()}
+      >
+        Email {getSortingIcon(column)}
+      </div>
+    ),
     cell: info => info.getValue(),
   },
   {
     accessorKey: 'status',
-    header: () => <div className='flex items-center'>Status</div>,
+    header: ({ column }) => (
+      <div
+        className='flex items-center cursor-pointer'
+        onClick={column.getToggleSortingHandler()}
+      >
+        Status {getSortingIcon(column)}
+      </div>
+    ),
     cell: info => info.getValue(),
   },
 ];
@@ -67,7 +89,7 @@ const globalFilterFn: FilterFn<UserData> = (row, columnId, filterValue) => {
 
   return (
     (row.getValue('name') as string).toLowerCase().includes(filterValue.toLowerCase()) ||
-    (row.getValue('email') as string).toLowerCase().includes(filterValue.toLowerCase()) 
+    (row.getValue('email') as string).toLowerCase().includes(filterValue.toLowerCase())
   );
 };
 
@@ -105,74 +127,77 @@ export function DataTable<TData, TValue>({
     table.setGlobalFilter(status); // Setting status as the global filter value
   };
 
-  const getSortingIcon = (columnId: string) => {
-    const isSorted = sorting.find(sort => sort.id === columnId);
-    if (!isSorted) return null;
-    return isSorted.desc ? '↓' : '↑';
-  };
+  function getSortingIcon(column) {
+    if (!column.getIsSorted()) {
+      return null;
+    }
+    return column.getIsSorted() === 'desc' ? '↓' : '↑';
+  }
 
   return (
     <>
       <div className='flex items-center justify-between mb-4'>
         <div className='flex items-center'>
           <Input
-            placeholder='Search by name or  email'
+            placeholder='Search by name or email'
             value={globalFilter}
             onChange={event => setGlobalFilter(event.target.value)}
             className='max-w-sm'
           />
         </div>
-<div className='flex items-center  justify-end'>
-        <div className='mr-0'>
-          {/* Status dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant='outline' className='ml-auto'>
-              Status
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align='end'>
-            {['Active', 'Pending', 'Inactive'].map(status => (
-              <DropdownMenuCheckboxItem
-                key={status}
-                className='capitalize'
-                checked={selectedStatus === status.toLowerCase()}
-                onCheckedChange={value => handleStatusChange(value ? status.toLowerCase() : '')}
-              >
-                {status}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className='flex items-center justify-end'>
+          <div className='mr-0'>
+            {/* Status dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant='outline' className='ml-auto'>
+                  Status
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align='end'>
+                {['Active', 'Pending', 'Inactive'].map(status => (
+                  <DropdownMenuCheckboxItem
+                    key={status}
+                    className='capitalize'
+                    checked={selectedStatus === status.toLowerCase()}
+                    onCheckedChange={value => handleStatusChange(value ? status.toLowerCase() : '')}
+                  >
+                    {status}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          <div className='ml-4'>
+            <DatePickerWithRange date={date} setDate={setDate} />
+          </div>
+          <div className='ml-4'>
+            <DataDownload data={data} />
+          </div>
+          {/* Column visibility */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant='outline' className='ml-2'>
+                Columns
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='end'>
+              {table
+                .getAllColumns()
+                .filter(column => column.getCanHide())
+                .map(column => (
+                  <DropdownMenuCheckboxItem
+                    key={column.id}
+                    className='capitalize'
+                    checked={column.getIsVisible()}
+                    onCheckedChange={value => column.toggleVisibility(!!value)}
+                  >
+                    {column.id}
+                  </DropdownMenuCheckboxItem>
+                ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-        <div className=' ml-4'><DatePickerWithRange date={date} setDate={setDate} /></div>
-        
-        <div className=' ml-4'> <DataDownload data={data} /></div>
-        {/* Column visibility */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant='outline' className='ml-2'>
-              Columns
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align='end'>
-            {table
-              .getAllColumns()
-              .filter(column => column.getCanHide())
-              .map(column => (
-                <DropdownMenuCheckboxItem
-                  key={column.id}
-                  className='capitalize'
-                  checked={column.getIsVisible()}
-                  onCheckedChange={value => column.toggleVisibility(!!value)}
-                >
-                  {column.id}
-                </DropdownMenuCheckboxItem>
-              ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
       </div>
       {/* Table */}
       <div className='rounded-md border'>
@@ -191,7 +216,7 @@ export function DataTable<TData, TValue>({
                         header.column.columnDef.header,
                         header.getContext()
                       )}
-                      {(header.column.id === 'name' || header.column.id === 'email' || header.column.id === 'lastSeen' || header.column.id === 'status') && getSortingIcon(header.column.id)}
+                      {header.column.getCanSort() && getSortingIcon(header.column)}
                     </div>
                   </TableHead>
                 ))}
@@ -228,7 +253,6 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-
       {/* Pagination */}
       <div className='flex items-center justify-end space-x-2 py-4'>
         <Button
@@ -251,3 +275,4 @@ export function DataTable<TData, TValue>({
     </>
   );
 }
+
