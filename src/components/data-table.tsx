@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   ColumnDef,
   flexRender,
@@ -27,52 +27,37 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { DatePickerWithRange, DateRange } from '@/app/users/DateRangePicker'; // Make sure DateRange is imported correctly
-import DataDownload from '../app/users/datadownload'; // Ensure the correct path
+import { DatePickerWithRange, DateRange } from '@/app/users/DateRangePicker';
+import DataDownload from "../app/users/datadownload";
 
 // Define your data type
 interface UserData {
   name: string;
   email: string;
   status: string;
+  datecreated: string; // Ensure this matches the format of your date field
 }
 
 // Define your columns
 const columns: ColumnDef<UserData, any>[] = [
   {
     accessorKey: 'name',
-    header: ({ column }) => (
-      <div
-        className='flex items-center cursor-pointer'
-        onClick={column.getToggleSortingHandler()}
-      >
-        Name {getSortingIcon(column)}
-      </div>
-    ),
+    header: () => <div className='flex items-center'>Name</div>,
     cell: info => info.getValue(),
   },
   {
     accessorKey: 'email',
-    header: ({ column }) => (
-      <div
-        className='flex items-center cursor-pointer'
-        onClick={column.getToggleSortingHandler()}
-      >
-        Email {getSortingIcon(column)}
-      </div>
-    ),
+    header: () => <div className='flex items-center'>Email</div>,
     cell: info => info.getValue(),
   },
   {
     accessorKey: 'status',
-    header: ({ column }) => (
-      <div
-        className='flex items-center cursor-pointer'
-        onClick={column.getToggleSortingHandler()}
-      >
-        Status {getSortingIcon(column)}
-      </div>
-    ),
+    header: () => <div className='flex items-center'>Status</div>,
+    cell: info => info.getValue(),
+  },
+  {
+    accessorKey: 'datecreated',
+    header: () => <div className='flex items-center'>Date Created</div>,
     cell: info => info.getValue(),
   },
 ];
@@ -103,8 +88,21 @@ export function DataTable<TData, TValue>({
   const [selectedStatus, setSelectedStatus] = useState<string>('');
   const [date, setDate] = useState<DateRange | undefined>();
 
+  const filteredData = useMemo(() => {
+    if (!date) return data;
+    return data.filter((item: UserData) => {
+      const itemDate = new Date(item.datecreated);
+      const fromDate = date.from ? new Date(date.from) : null;
+      const toDate = date.to ? new Date(date.to) : null;
+      if (fromDate && toDate) {
+        return itemDate >= fromDate && itemDate <= toDate;
+      }
+      return true;
+    });
+  }, [data, date]);
+
   const table = useReactTable({
-    data,
+    data: filteredData,
     columns,
     state: {
       sorting,
@@ -127,12 +125,11 @@ export function DataTable<TData, TValue>({
     table.setGlobalFilter(status); // Setting status as the global filter value
   };
 
-  function getSortingIcon(column) {
-    if (!column.getIsSorted()) {
-      return null;
-    }
-    return column.getIsSorted() === 'desc' ? '↓' : '↑';
-  }
+  const getSortingIcon = (columnId: string) => {
+    const isSorted = sorting.find(sort => sort.id === columnId);
+    if (!isSorted) return null;
+    return isSorted.desc ? '↓' : '↑';
+  };
 
   return (
     <>
@@ -172,7 +169,7 @@ export function DataTable<TData, TValue>({
             <DatePickerWithRange date={date} setDate={setDate} />
           </div>
           <div className='ml-4'>
-            <DataDownload data={data} />
+            <DataDownload data={filteredData} />
           </div>
           {/* Column visibility */}
           <DropdownMenu>
@@ -216,7 +213,7 @@ export function DataTable<TData, TValue>({
                         header.column.columnDef.header,
                         header.getContext()
                       )}
-                      {header.column.getCanSort() && getSortingIcon(header.column)}
+                      {header.column.getCanSort() && getSortingIcon(header.column.id)}
                     </div>
                   </TableHead>
                 ))}
@@ -275,4 +272,3 @@ export function DataTable<TData, TValue>({
     </>
   );
 }
-
