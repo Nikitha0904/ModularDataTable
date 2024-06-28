@@ -28,15 +28,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DatePickerWithRange, DateRange } from '@/app/users/DateRangePicker';
-import DataDownload from "../app/users/datadownload";
+import DataDownload, { User } from '@/app/users/datadownload';
 
 // Define your data type
-interface UserData {
-  name: string;
-  email: string;
-  status: string;
-  datecreated: string; // Ensure this matches the format of your date field
-}
+interface UserData extends User {}
 
 // Define your columns
 const columns: ColumnDef<UserData, any>[] = [
@@ -79,26 +74,33 @@ const columns: ColumnDef<UserData, any>[] = [
   },
 ];
 
-interface DataTableProps<TData, TValue> {
+interface DataTableProps<TData extends User, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
 }
 
 const globalFilterFn: FilterFn<UserData> = (row, columnId, filterValue) => {
+<<<<<<< HEAD
   if(columnId==='status' && filterValue=='all'){
     return true;
   }
   if (columnId === 'status' && filterValue) {
     return row.getValue('status') === filterValue;
+=======
+  if (filterValue && filterValue.toLowerCase() !== 'all') {
+    if (columnId === 'status') {
+      return row.getValue('status') === filterValue.toLowerCase();
+    }
+    return (
+      (row.getValue('name') as string).toLowerCase().includes(filterValue.toLowerCase()) ||
+      (row.getValue('email') as string).toLowerCase().includes(filterValue.toLowerCase())
+    );
+>>>>>>> cad4c8265ecfa6d7f3583f393dddbdef34852cf7
   }
-
-  return (
-    (row.getValue('name') as string).toLowerCase().includes(filterValue.toLowerCase()) ||
-    (row.getValue('email') as string).toLowerCase().includes(filterValue.toLowerCase())
-  );
+  return true; // Return true to show all rows when filter is empty or 'all'
 };
 
-export function DataTable<TData, TValue>({
+export function DataTable<TData extends User, TValue>({
   columns,
   data
 }: DataTableProps<TData, TValue>) {
@@ -142,7 +144,7 @@ export function DataTable<TData, TValue>({
 
   const handleStatusChange = (status: string) => {
     setSelectedStatus(status);
-    setGlobalFilter(status);
+    setGlobalFilter('');
     table.setGlobalFilter(status); // Setting status as the global filter value
   };
 
@@ -176,6 +178,7 @@ export function DataTable<TData, TValue>({
             className='max-w-sm'
           />
         </div>
+
         <div className='flex items-center justify-end'>
           <div className='mr-0'>
             {/* Status dropdown */}
@@ -186,7 +189,11 @@ export function DataTable<TData, TValue>({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align='end'>
+<<<<<<< HEAD
                 {['All','Active', 'Pending', 'Inactive'].map(status => (
+=======
+                {['All', 'Active', 'Pending', 'Inactive'].map(status => (
+>>>>>>> cad4c8265ecfa6d7f3583f393dddbdef34852cf7
                   <DropdownMenuCheckboxItem
                     key={status}
                     className='capitalize'
@@ -203,7 +210,7 @@ export function DataTable<TData, TValue>({
             <DatePickerWithRange date={date} setDate={setDate} />
           </div>
           <div className='ml-4'>
-            <DataDownload data={filteredData} />
+            <DataDownload data={filteredData as User[]} />
           </div>
           {/* Column visibility */}
           <DropdownMenu>

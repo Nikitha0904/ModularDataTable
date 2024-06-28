@@ -65,8 +65,8 @@ const DataDownload: FC<DataDownloadProps> = ({ data }) => {
 
   return (
     <div>
-      <Button onClick={handleDownloadCSV}>Download CSV</Button>
-      <Button onClick={handleDownloadPDF}>Download PDF</Button>
+      <Button onClick={handleDownloadCSV} >Download CSV</Button>
+      <Button onClick={handleDownloadPDF} className='ml-2'>Download PDF</Button>
     </div>
   );
 };
