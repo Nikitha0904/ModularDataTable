@@ -63,3 +63,5 @@ export function DatePickerWithRange({className,date,setDate}:DatePickerProps) {
         </div>
     )
 }
+
+export { DateRange }

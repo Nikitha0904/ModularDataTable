@@ -17,13 +17,13 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow
+  TableRow,
 } from '@/components/ui/table';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,6 +40,23 @@ interface UserData {
 
 // Define your columns
 const columns: ColumnDef<UserData, any>[] = [
+  {
+    id: 'select',
+    header: ({ table }) => (
+      <input
+        type="checkbox"
+        checked={table.getIsAllRowsSelected()}
+        onChange={table.getToggleAllRowsSelectedHandler()}
+      />
+    ),
+    cell: ({ row }) => (
+      <input
+        type="checkbox"
+        checked={row.getIsSelected()}
+        onChange={row.getToggleSelectedHandler()}
+      />
+    ),
+  },
   {
     accessorKey: 'name',
     header: () => <div className='flex items-center'>Name</div>,
@@ -68,6 +85,9 @@ interface DataTableProps<TData, TValue> {
 }
 
 const globalFilterFn: FilterFn<UserData> = (row, columnId, filterValue) => {
+  if(columnId==='status' && filterValue=='all'){
+    return true;
+  }
   if (columnId === 'status' && filterValue) {
     return row.getValue('status') === filterValue;
   }
@@ -87,6 +107,7 @@ export function DataTable<TData, TValue>({
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [selectedStatus, setSelectedStatus] = useState<string>('');
   const [date, setDate] = useState<DateRange | undefined>();
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
 
   const filteredData = useMemo(() => {
     if (!date) return data;
@@ -125,6 +146,20 @@ export function DataTable<TData, TValue>({
     table.setGlobalFilter(status); // Setting status as the global filter value
   };
 
+  const handleRowSelect = (rowId: string) => {
+    setSelectedRows(prev => {
+      const newSelectedRows = new Set(prev);
+      if (newSelectedRows.has(rowId)) {
+        newSelectedRows.delete(rowId);
+      } else {
+        newSelectedRows.add(rowId);
+      }
+      return newSelectedRows;
+    });
+  };
+
+  const isRowSelected = (rowId: string) => selectedRows.has(rowId);
+
   const getSortingIcon = (columnId: string) => {
     const isSorted = sorting.find(sort => sort.id === columnId);
     if (!isSorted) return null;
@@ -137,7 +172,6 @@ export function DataTable<TData, TValue>({
         <div className='flex items-center'>
           <Input
             placeholder='Search by name or email'
-            value={globalFilter}
             onChange={event => setGlobalFilter(event.target.value)}
             className='max-w-sm'
           />
@@ -152,7 +186,7 @@ export function DataTable<TData, TValue>({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align='end'>
-                {['Active', 'Pending', 'Inactive'].map(status => (
+                {['All','Active', 'Pending', 'Inactive'].map(status => (
                   <DropdownMenuCheckboxItem
                     key={status}
                     className='capitalize'
@@ -226,6 +260,7 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() ? 'selected' : undefined}
+                  className={isRowSelected(row.id) ? 'bg-blue-100' : ''}
                 >
                   {row.getVisibleCells().map(cell => (
                     <TableCell key={cell.id}>
